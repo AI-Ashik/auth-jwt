@@ -8,6 +8,7 @@ const { JWT_SECRET } = process.env;
 
 const router = express.Router();
 const userSchema = require("../schemas/userSchema");
+const checkLogin = require("../middlewares/checkLogin");
 
 // eslint-disable-next-line new-cap
 const User = new mongoose.model("User", userSchema);
@@ -32,7 +33,7 @@ router.post("/signup", async (req, res) => {
   }
 });
 
-router.post("/login", async (req, res) => {
+router.post("/login", checkLogin, async (req, res) => {
   try {
     const user = await User.find({ username: req.body.username });
     if (user && user.length > 0) {
