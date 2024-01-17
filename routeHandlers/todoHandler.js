@@ -1,11 +1,32 @@
 const express = require("express");
 const mongoose = require("mongoose");
+const checkLogin = require("../middlewares/checkLogin");
 
 const router = express.Router();
 const todoSchema = require("../schemas/todoSchema");
 
 // eslint-disable-next-line new-cap
 const Todo = new mongoose.model("Todo", todoSchema);
+
+router.get("/", checkLogin, async (req, res) => {
+  try {
+    const data = await Todo.find({})
+      .populate("user", "name username -_id")
+      .select({
+        _id: 0,
+        __v: 0,
+        date: 0,
+      })
+      .limit(2);
+    res.status(200).json({
+      data,
+    });
+  } catch (error) {
+    res.status(500).json({
+      error: "There was a server side error!",
+    });
+  }
+});
 
 // GET ACTIVE TODOS
 router.get("/active", async (req, res) => {
@@ -58,9 +79,12 @@ router.get("/:id", async (req, res) => {
 });
 
 // POST A TODO
-router.post("/", async (req, res) => {
+router.post("/", checkLogin, async (req, res) => {
   try {
-    const newTodo = new Todo(req.body);
+    const newTodo = new Todo({
+      ...req.body,
+      user: req.userId,
+    });
     await newTodo.save();
     res.status(200).json({
       message: "Todo was inserted successfully!",
